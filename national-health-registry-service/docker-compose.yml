@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  registry-db:
+    image: postgres:15-alpine
+    container_name: registry-postgres-container
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=registry_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - registry_pgdata:/var/lib/postgresql/data
+    networks:
+      - registry-network
+
+  registry-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: national-health-registry-app
+    ports:
+      - "8081:8081"
+    restart: always
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://registry-db:5432/registry_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - registry-db
+    networks:
+      - registry-network
+
+volumes:
+  registry_pgdata:
+
+networks:
+  registry-network:
+    driver: bridge
